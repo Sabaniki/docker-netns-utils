@@ -1,0 +1,22 @@
+#!/bin/zsh
+
+function hackNs() {
+    containerName=$1
+    pathToNs="/var/run/netns"
+    if [ ! -d $pathToNs ]; then
+        echo "create dir '${pathToNs}'"
+        sudo mkdir -p /var/run/netns
+    fi
+    if [ -L "$pathToNs/$containerName" ]; then
+        echo "delete ${pathToNs}/${containerName}"
+        sudo rm ${pathToNs}/${containerName}
+    fi
+    sudo ln -s /proc/$(docker inspect ${containerName} -f "{{.State.Pid}}")/ns/net ${pathToNs}/${containerName}
+}
+
+containerName=$(docker ps -a | sed '1d' | awk '{print $NF}' | fzf)
+
+if [ -z $containerName ]; then
+    exit 1
+fi
+hackNs $containerName

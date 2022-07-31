@@ -1,0 +1,19 @@
+#!/bin/zsh
+
+if [ $# = 0 ]; then
+    >&2 echo "USAGE: dexec [command...] \nex) dexec sh / dexec ip -br a /..."
+    exit 1
+fi
+
+containerName=$(docker ps -a | sed '1d' | awk '{print $NF}' | fzf)
+
+if [ -z $containerName ]; then
+    exit 1
+fi
+
+echo "\e[90;1mdocker exec -it $containerName $@\e[m\n"
+docker exec -it $containerName "$@"
+
+# containerNameLength=$(echo $containerName | wc | awk '{print $3}')
+# dots=`expr $COLUMNS - $containerNameLength`
+# echo "\e[90;1m$containerName `(seq -s. $dots | tr -d '[:digit:]')`\e[m"

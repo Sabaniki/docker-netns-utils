@@ -1,0 +1,20 @@
+#!/bin/zsh
+
+containerNameWithID=$(docker ps -a | sed '1d' | awk '{printf "%-20s %s\n",$NF,$1}' | fzf)
+
+if [ -z $containerNameWithID ]; then
+    exit 1
+fi
+
+containerID=$(echo "$containerNameWithID" | awk '{print $2}')
+containerInfo=$(echo $containerNameWithID | awk '{printf $1; printf ": "; printf $2}')
+
+
+echo "\e[31;1mcontainer '$containerInfo' will be deleted, ok? (y/N):\e[m "
+read yn 2> /dev/null
+case "$yn" in
+  [yY]*) echo "deleted container '$containerInfo'";;
+  *) echo "abort";exit 1;;
+esac
+
+docker rm $containerID 1> /dev/null

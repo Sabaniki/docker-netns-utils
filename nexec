@@ -1,0 +1,14 @@
+#!/bin/zsh
+
+if [ $# = 0 ]; then
+    >&2 echo "USAGE: nexec [command...] \nex) nexec zsh / nexec ip -br a /..."
+    exit 1
+fi
+netnsName=$(ip netns | awk '{print $1}'  | fzf)
+
+if [ -z $netnsName ]; then
+    exit 1
+fi
+
+echo "\e[90;1mip netns exec $netnsName $@\e[m\n"
+sudo ip netns exec $netnsName "$@"

@@ -1,0 +1,14 @@
+#!/bin/zsh
+netns=$(ip netns | awk '{print $1}' | fzf)
+if [ -z $netns ]; then
+  exit 1
+fi
+
+echo "\e[31;1mnetns '$netns' will be deleted, ok? (y/N):\e[m "
+read yn 2> /dev/null
+case "$yn" in
+  [yY]*) echo "deleted netns '$netns'";;
+  *) echo "abort";exit 1;;
+esac
+
+sudo ip netns delete $netns
