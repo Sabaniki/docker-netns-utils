@@ -1,0 +1,36 @@
+#!/bin/zsh
+
+function hackNs() {
+    containerName=$1
+    pathToNs="/var/run/netns"
+    if [ ! -d $pathToNs ]; then
+        echo "create dir '${pathToNs}'"
+        sudo mkdir -p /var/run/netns
+    fi
+    if [ -L "$pathToNs/$containerName" ]; then
+        echo "delete ${pathToNs}/${containerName}"
+        sudo rm ${pathToNs}/${containerName}
+    fi
+    sudo ln -s /proc/$(docker inspect ${containerName} -f "{{.State.Pid}}")/ns/net ${pathToNs}/${containerName}
+}
+
+if [ $# = 0 ]; then
+    >&2 echo "USAGE: anexec [command...] \nex) anexec zsh / anexec ip -br a /..."
+    exit 1
+fi
+
+containerName=$(docker ps -a | sed '1d' | awk '{print $NF}' | fzf)
+
+if [ -z $containerName ]; then
+    exit 1
+fi
+
+hackNs $containerName
+
+netnsName=$containerName
+
+echo "\e[90;1mip netns exec $netnsName $@\e[m\n"
+sudo ip netns exec $netnsName "$@"
+
+echo "\e[90;1mip netns delete $netnsName\e[m\n"
+sudo ip netns delete $netnsName
