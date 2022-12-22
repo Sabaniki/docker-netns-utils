@@ -14,6 +14,23 @@ function hackNs() {
     sudo ln -s /proc/$(docker inspect ${containerName} -f "{{.State.Pid}}")/ns/net ${pathToNs}/${containerName}
 }
 
+function createResolvConf() {
+    nsName=$1
+    pathToEtcInNs="/etc/netns/${nsName}"
+    if [ ! -d $pathToEtcInNs ]; then
+        sudo mkdir -p ${pathToEtcInNs}
+    fi
+
+    if [ ! -e "${pathToEtcInNs}/resolv.conf" ]; then
+        echo "\e[90;1mcreate resolv.conf at '${pathToEtcInNs}'\e[m\n"
+        cat << EOF | sudo tee -a ${pathToEtcInNs}/resolv.conf > /dev/null
+nameserver 8.8.8.8
+nameserver 2001:4860:4860::8888
+options edns0 trust-ad
+EOF
+    fi
+}
+
 if [ $# = 0 ]; then
     >&2 echo "USAGE: anexec [command...] \nex) anexec zsh / anexec ip -br a /..."
     exit 1
@@ -29,8 +46,14 @@ hackNs $containerName
 
 netnsName=$containerName
 
+
+createResolvConf $netnsName
+
 echo "\e[90;1mip netns exec $netnsName $@\e[m\n"
 sudo ip netns exec $netnsName "$@"
 
 echo "\e[90;1mip netns delete $netnsName\e[m\n"
 sudo ip netns delete $netnsName
+
+echo "\e[90;1mrm -r /etc/netns/$netnsName\e[m\n"
+sudo rm -r /etc/netns/$netnsName
